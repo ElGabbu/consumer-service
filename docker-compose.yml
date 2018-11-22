@@ -1,0 +1,27 @@
+version: "3.5"
+services:
+    consumer-webserver:
+      image: nginx:alpine
+      container_name: consumer-service
+      working_dir: /application
+      volumes:
+          - .:/application
+          - ./docker/nginx/nginx.conf:/etc/nginx/conf.d/default.conf
+      ports:
+       - "8006:80"
+      expose:
+        - 80
+      networks:
+        - chiliz
+    consumer-php-fpm:
+      build: docker/php-fpm
+      container_name: consumer-php-fpm
+      working_dir: /application
+      volumes:
+        - .:/application
+        - ./docker/php-fpm/php-ini-overrides.ini:/etc/php/7.2/fpm/conf.d/99-overrides.ini
+      networks:
+        - chiliz
+networks:
+  chiliz:
+    name: chiliz-net
