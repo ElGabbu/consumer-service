@@ -2,13 +2,16 @@
 
 namespace App\Controller;
 
+use App\Entity\Partner;
+use Doctrine\ORM\EntityManagerInterface;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\TransferException;
+use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
 
-class DefaultController
+class DefaultController extends AbstractController
 {
-    public function index()
+    public function index(EntityManagerInterface $entityManager)
     {
         $apiClient = new Client();
         try {
@@ -24,7 +27,22 @@ class DefaultController
 
         $result = json_decode($response->getBody()->getContents());
         foreach($result->data as $partner) {
-            echo $partner->name;
+            $existingPartner = $this->getDoctrine()
+                ->getRepository(Partner::class)
+                ->findOneBy(['name' => $partner->name]);
+
+            if($existingPartner) {
+                echo sprintf('%s already listed in the database', $partner->name);
+                continue;
+            }
+
+            $newPartner = new Partner();
+            $newPartner->setName($partner->name);
+
+            $entityManager->persist($newPartner);
+            $entityManager->flush();
+
+            echo sprintf('%s added in the database', $partner->name);
         }
     }
 }
